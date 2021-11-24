@@ -65,6 +65,7 @@ names(strat_metrics_filtered)[names(strat_metrics_filtered) == "METRIC.F1_Score"
 
 #subset data for table export
 strat_met_table = strat_metrics_filtered %>% select("Subset", "Type", "Recall", "Precision", "Fraction_NA", "F1_Score", "FP.gt", "FP.al", "TRUTH.FN")
+strat_met_table_filt = strat_metrics_filtered %>% select("Subset", "Type", "Recall", "Precision", "Fraction_NA", "F1_Score")
 
 #tables
 #set table theme
@@ -121,7 +122,7 @@ plot.title = ggplot() +
 plots.grid = grid.arrange(strat_indels_plot, strat_snp_plot, ncol=2)
 
 #write each data frame as a separate sheet to xlsx
-list_of_datasets = list("Filtered Metrics" = strat_met_table, "Indels Discrepancies" = strat_met_plot_indel, "SNP Discrepancies" = strat_met_plot_snp)
+list_of_datasets = list("Filtered Metrics" = strat_met_table_filt, "Indels Discrepancies" = strat_met_plot_indel, "SNP Discrepancies" = strat_met_plot_snp)
 write.xlsx(list_of_datasets, paste0("out/", txtFileName, "_metrics.xlsx"))
 
 #export tables and plots
