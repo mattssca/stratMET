@@ -11,6 +11,7 @@ R Package for processing csv files with variant metrics for different genomic st
 7. Output files are generated and saved to `/out` folder.
 
 ## Flowchart
+(coming soon...)
 
 ## Scripts
 1. [stratMET.R](https://github.com/mattssca/stratMET/blob/main/scripts/stratMET.R]), Main R script that performs necessary data wrangling-tasks and computes relevant variant call-set metrics. 
