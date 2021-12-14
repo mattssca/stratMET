@@ -6,7 +6,7 @@ R Package for processing csv files with variant metrics for different genomic st
 2. Unpack with: `unzip -a main.zip`
 3. Set directory as current directory: `cd stratMET-main/`
 4. Install dependencies: `sh install_dep.sh`
-5. Migrate input csv files to `/in` folder.
+5. Migrate input csv files to `/in` folder. (to run pipeline with example data, enter `mv example-data.csv in/`)
 6. Execute master script with: `sh stratMET.sh` 
 7. Output files are generated and saved to `/out` folder.
 
