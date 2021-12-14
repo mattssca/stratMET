@@ -18,6 +18,7 @@ R Package for processing csv files with variant metrics for different genomic st
 3. [img_man.sh](https://github.com/mattssca/stratMET/blob/main/scripts/img_man.sh), are called to compile individual plots into a report format in pdf.
 4. [install_dep.R](https://github.com/mattssca/stratMET/blob/main/scripts/install_dep.R]), Script for installing necessary R packages.
 5. [instal.dep.sh](https://github.com/mattssca/stratMET/blob/main/install.dep.sh]), Shell script for installing all necessary dependencies (calls above mentioned R script).
+6. [stratMET.sh](https://github.com/mattssca/stratMET/blob/main/stratMET.sh]), Main script for executing the workflow.
 
 ## Example Output
 ### Tables and .xlxs
