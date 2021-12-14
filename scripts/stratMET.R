@@ -25,7 +25,7 @@ txtFileName <- paste0(sample_name, "_strat_met_", now)
 strat_met = read.table(file = paste0("in/", sample_name, ".csv"), sep = ",", header = T)
 
 #subset data (select variables and rows)
-strat_met_sub = strat_met %>% select("Subset", "Subtype", "Type", "Filter", "METRIC.Recall", "METRIC.Precision", "METRIC.Frac_NA", "METRIC.F1_Score", "FP.gt", "FP.al", "TRUTH.FN")
+strat_met_sub = strat_met %>% select("Subset", "Subtype", "Type", "Filter", "METRIC.Recall", "METRIC.Precision", "METRIC.Frac_NA", "METRIC.F1_Score", "FP.gt", "FP.al", "TRUTH.FN", "QUERY.TOTAL")
 
 #subset data on specific rows (all benchmark regions, alldifficult, and notinalldifficult)
 #all benchmark regions
@@ -58,31 +58,47 @@ strat_metrics_filtered = rbind(strat_met_sub_all, strat_met_sub_alldif, strat_me
 strat_metrics_filtered = select(strat_metrics_filtered,-c(Subtype, Filter))
 
 #update variable names
+names(strat_metrics_filtered)[names(strat_metrics_filtered) == "Subset"] = "Stratification"
 names(strat_metrics_filtered)[names(strat_metrics_filtered) == "METRIC.Recall"] = "Recall"
 names(strat_metrics_filtered)[names(strat_metrics_filtered) == "METRIC.Precision"] = "Precision"
-names(strat_metrics_filtered)[names(strat_metrics_filtered) == "METRIC.Frac_NA"] = "Fraction_NA"
-names(strat_metrics_filtered)[names(strat_metrics_filtered) == "METRIC.F1_Score"] = "F1_Score"
+names(strat_metrics_filtered)[names(strat_metrics_filtered) == "METRIC.Frac_NA"] = "Fraction.NA"
+names(strat_metrics_filtered)[names(strat_metrics_filtered) == "METRIC.F1_Score"] = "F1.Score"
+names(strat_metrics_filtered)[names(strat_metrics_filtered) == "TRUTH.FN"] = "Truth.FN"
 
 #subset data for table export
-strat_met_table = strat_metrics_filtered %>% select("Subset", "Type", "Recall", "Precision", "Fraction_NA", "F1_Score", "FP.gt", "FP.al", "TRUTH.FN")
-strat_met_table_filt = strat_metrics_filtered %>% select("Subset", "Type", "Recall", "Precision", "Fraction_NA", "F1_Score")
+strat_met_table = strat_metrics_filtered %>% select("Stratification", "Type", "Recall", "Precision", "Fraction.NA", "F1.Score", "FP.gt", "FP.al", "Truth.FN", "QUERY.TOTAL")
+strat_met_table_filt = strat_metrics_filtered %>% select("Stratification", "Type", "Recall", "Precision", "Fraction.NA", "F1.Score")
+
+#rename query total variable
+names(strat_met_table)[names(strat_met_table) == "QUERY.TOTAL"] = "Query.Total"
 
 #tables
 #set table theme
-theme_1 = ttheme_default(core = list(fg_params = list(hjust = 0, x = 0.1, fontsize = 9)), colhead = list(fg_params = list(fontsize = 12, fontface = "bold")))
+theme_1 = ttheme_default(core = list(fg_params = list(hjust = 1, x = 0.95, fontsize = 9)), colhead = list(fg_params = list(fontsize = 12, fontface = "bold")))
 
 #convert table to df
 strat_met_table = as.data.frame(strat_met_table)
 
+#get total number of variants in all stratifications
+query.indel = strat_met_table[1,10]
+query.snp = strat_met_table[2,10]
+query.total.all = query.indel + query.snp
+
+#discordant fraction calculations
+strat_met_table$Fraction.Discordant = ((strat_met_table$FP.al + strat_met_table$FP.gt + strat_met_table$Truth.FN) / strat_met_table$Query.Total)
+
+#reorganize variables for table
+strat_met_table = strat_met_table %>% select("Stratification", "Type", "Query.Total", "Recall", "Precision", "Fraction.NA", "F1.Score", "FP.gt", "FP.al", "Truth.FN", "Fraction.Discordant")
+
 #convert data frame into grob
-strat_met_grob = grid.arrange(top = "Table 1. Filtered variant (Indel & SNP) metrics by stratification.", tableGrob(strat_met_table, theme = theme_1, rows = NULL))
+strat_met_grob = grid.arrange(top = paste0("Table 1. Variant-metrics by genome stratification. Total number of variants in all stratifications: ", query.total.all, " (", query.indel, " indels and ", query.snp, " SNPs)."), tableGrob(strat_met_table, theme = theme_1, rows = NULL))
 
 ##plotting
 #set plot theme
 ggthemr("fresh")
 
 #subset data for plot and subset on variant type
-strat_met_plot = strat_metrics_filtered %>% select("Subset", "Type", "FP.gt", "FP.al", "TRUTH.FN")
+strat_met_plot = strat_metrics_filtered %>% select("Stratification", "Type", "FP.gt", "FP.al", "Truth.FN")
 strat_met_plot_indel = filter(strat_met_plot, Type == "INDEL")
 strat_met_plot_indel = select(strat_met_plot_indel,-c(Type))
 strat_met_plot_snp = filter(strat_met_plot, Type == "SNP")
@@ -90,19 +106,19 @@ strat_met_plot_snp = select(strat_met_plot_snp,-c(Type))
 
 #melt df to create stacked plots
 indel_plot = strat_met_plot_indel %>%
-  gather(Type, Value, -Subset)
+  gather(Type, Value, -Stratification)
 
 snp_plot = strat_met_plot_snp %>%
-  gather(Type, Value, -Subset)
+  gather(Type, Value, -Stratification)
 
 #create stacked bar-plot, number of discrepancies (FP.gt, FP.al, and TRUTH.FN) ranked by genome stratification.
-strat_indels_plot = ggplot(indel_plot, aes(x = Subset, y = Value, fill = Type)) +
-  labs(title = "INDEL", subtitle = "Stacked barplot with number of discrepancies ranked by genome stratification",x = "", y = "Number of variants", fill = "") +
+strat_indels_plot = ggplot(indel_plot, aes(x = Stratification, y = Value, fill = Type)) +
+  labs(title = "INDEL", subtitle = "Indel discrepancies, ranked by genome stratification.",x = "", y = "Number of variants", fill = "") +
   geom_bar(position = "stack", stat = "identity") +
   theme(legend.position = "none", axis.text.x = element_text(angle = 45, hjust = 1), plot.margin=unit(c(1,1,1,1),"cm"))
 
-strat_snp_plot = ggplot(snp_plot, aes(x = Subset, y = Value, fill = Type)) +
-  labs(title = "SNP", subtitle = "Stacked barplot with number of discrepancies ranked by genome stratification",x = "", y = "", fill = "") +
+strat_snp_plot = ggplot(snp_plot, aes(x = Stratification, y = Value, fill = Type)) +
+  labs(title = "SNP", subtitle = "SNP discrepancies, ranked by genome stratification.",x = "", y = "", fill = "") +
   geom_bar(position = "stack", stat = "identity") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1), plot.margin=unit(c(1,1,1,1),"cm"))
 
@@ -130,4 +146,3 @@ ggsave(plots.grid, file = paste0("out/", txtFileName, "_discrepancies_genome_str
 ggsave(strat_met_grob, file = paste0("out/", txtFileName, "_filtered_metrics_tab.png"), limitsize = FALSE, width = 14, height = 2, units = c("in"), dpi = 300)
 ggsave(box, file = paste0("out/", txtFileName, "_box2.png"), limitsize = FALSE, width = 14, height = 0.3, units = c("in"), dpi = 300)
 ggsave(plot.title, file = paste0("out/", txtFileName, "_plot_title.png"), limitsize = FALSE, width = 14, height = 2, units = c("in"), dpi = 300)
-   
